@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusPedido {
+  PENDENTE
+  PAGO
+  ENVIADO
+  CANCELADO
+}
+
+enum TipoPagamento {
+  CARTAO
+  PIX
+  BOLETO
+}
+
+model Cliente {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  telefone  String?
+  endereco  String?
+  pedidos   Pedido[]
+}
+
+model Produto {
+  id          String             @id @default(uuid())
+  nome        String
+  descricao   String
+  preco       Decimal
+  estoque     Int
+  categorias  ProdutoCategoria[]
+  itens       ItemPedido[]
+}
+
+model Categoria {
+  id          String             @id @default(uuid())
+  nome        String
+  descricao   String?
+  produtos    ProdutoCategoria[]
+}
+
+model ProdutoCategoria {
+  produtoId   String
+  categoriaId String
+  produto     Produto   @relation(fields: [produtoId], references: [id])
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  @@id([produtoId, categoriaId])
+}
+
+model Pedido {
+  id          String       @id @default(uuid())
+  data        DateTime     @default(now())
+  status      StatusPedido
+  total       Decimal
+  clienteId   String
+  cliente     Cliente      @relation(fields: [clienteId], references: [id])
+  itens       ItemPedido[]
+  pagamento   Pagamento?
+}
+
+model ItemPedido {
+  id           String    @id @default(uuid())
+  quantidade   Int
+  precoUnitario Decimal
+  pedidoId     String
+  produtoId    String
+  pedido       Pedido    @relation(fields: [pedidoId], references: [id])
+  produto      Produto   @relation(fields: [produtoId], references: [id])
+}
+
+model Pagamento {
+  id              String        @id @default(uuid())
+  tipoPagamento   TipoPagamento
+  statusPagamento StatusPedido
+  pedidoId        String        @unique
+  pedido          Pedido        @relation(fields: [pedidoId], references: [id])
+}
